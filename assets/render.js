@@ -76,13 +76,14 @@
   var mermaidTheme = null;
   var isDark = function () { return root.guideTheme ? root.guideTheme.isDark() : (root.matchMedia && root.matchMedia('(prefers-color-scheme: dark)').matches); };
   function diagrams(where) {
-    if (!root.mermaid) return;
+    if (!root.mermaid) return Promise.resolve();
     var theme = isDark() ? 'dark' : 'neutral';
     if (mermaidTheme !== theme) { root.mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: theme, fontFamily: 'inherit' }); mermaidTheme = theme; }
     var nodes = (where || document).querySelectorAll('pre.mermaid:not([data-processed])');
     // keep each diagram's text, so it can be drawn again in the other colours
     [].forEach.call(nodes, function (n) { if (!n.hasAttribute('data-src')) n.setAttribute('data-src', n.textContent); });
-    if (nodes.length) root.mermaid.run({ nodes: nodes }).catch(function () { /* a broken diagram stays as text */ });
+    // resolves when every diagram is drawn (a broken diagram stays as text)
+    return nodes.length ? root.mermaid.run({ nodes: nodes }).catch(function () {}) : Promise.resolve();
   }
   // light / dark switched: draw every diagram again
   root.addEventListener('guide-theme', function () {
