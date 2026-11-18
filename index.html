@@ -85,6 +85,7 @@
     var moved = false, mark = function () { moved = true; };
     ['wheel', 'touchmove', 'keydown', 'mousedown'].forEach(function (t) { addEventListener(t, mark, { once: true, passive: true }); });
     R.diagrams(main).then(function () { if (!moved) toHash(); });
+    ticks(page, head);
   }
 
   // Menu of the page's parts. Titles like "Cashier: sell an item" are grouped under "Cashier" (a group that opens
@@ -136,6 +137,49 @@
     };
     window.onscroll = function () { if (!ticking) { ticking = true; requestAnimationFrame(spy); } };
     setTimeout(spy, 0);
+  }
+
+  // Checklists: tick boxes (- [ ] items) can be ticked; ticks are kept in this browser only, per page, with a counter
+  // per part and Print / Clear buttons. Nothing is sent to the server.
+  function ticks(page, head) {
+    var boxes = document.querySelectorAll('#main > section input.tick');
+    if (!boxes.length) return;
+    var key = 'guide.ticks.' + page.slug, saved = {};
+    try { saved = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (e) { saved = {}; }
+    var secs = document.querySelectorAll('#main > section');
+    var count = function () {
+      var all = 0, done = 0;
+      [].forEach.call(secs, function (s) {
+        var b = s.querySelectorAll('input.tick'); if (!b.length) return;
+        var d = [].filter.call(b, function (x) { return x.checked; }).length; all += b.length; done += d;
+        var c = s.querySelector('.tickcount'); if (!c) { c = document.createElement('span'); c.className = 'dcount tickcount'; s.querySelector('.dhead').appendChild(c); }
+        c.textContent = d + ' / ' + b.length + ' done'; c.classList.toggle('all', d === b.length);
+      });
+      bar.querySelector('b').textContent = done + ' of ' + all + ' done';
+      bar.querySelector('.pbar i').style.width = (all ? Math.round(done * 100 / all) : 0) + '%';
+    };
+    var store = function () {
+      var out = {};
+      [].forEach.call(secs, function (s) { var on = []; [].forEach.call(s.querySelectorAll('input.tick'), function (x, i) { if (x.checked) on.push(i); }); if (on.length) out[s.id] = on; });
+      try { localStorage.setItem(key, JSON.stringify(out)); } catch (e) { /* private window: ticks last until the page is closed */ }
+    };
+    [].forEach.call(secs, function (s) {
+      var mine = saved[s.id];
+      [].forEach.call(s.querySelectorAll('input.tick'), function (x, i) {
+        x.disabled = false;
+        if (mine) x.checked = mine.indexOf(i) >= 0;
+        x.addEventListener('change', function () { store(); count(); });
+      });
+    });
+    var bar = document.createElement('div'); bar.className = 'tickbar no-print';
+    bar.innerHTML = '<div class="pbar"><i></i></div><b></b><span class="sp"></span><button type="button" class="btn-lite" data-print>Print</button><button type="button" class="btn-lite" data-clear>Clear my ticks</button>';
+    bar.querySelector('[data-print]').onclick = function () { window.print(); };
+    bar.querySelector('[data-clear]').onclick = function () {
+      if (!confirm('Clear all your ticks on this page?')) return;
+      [].forEach.call(boxes, function (x) { x.checked = false; }); store(); count();
+    };
+    head.appendChild(bar);
+    count();
   }
 
   // search: hides blocks, cards, tables and terms that do not contain every word typed
