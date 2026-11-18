@@ -66,6 +66,9 @@ main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 60px; }
 .tag { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; white-space: nowrap; background: var(--sunken); color: var(--muted); }
 .tag.used { background: var(--key-soft); color: var(--key); }
 .tag.off { background: var(--bad-soft); color: var(--bad); }
+.role { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; background: var(--accent-soft); color: var(--accent); margin-left: 4px; }
+.note { background: var(--sunken); border-radius: 9px; padding: 8px 10px; font-size: .85rem; color: var(--muted); margin-bottom: 12px; }
+td select { border: 1px solid var(--line); border-radius: 7px; padding: 3px 6px; background: var(--surface); }
 .add-card { margin: 2px 0 8px 26px; }
 .editor { padding: 14px; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -80,6 +83,8 @@ main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 60px; }
 .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 10px; font-weight: 600; z-index: 20; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
 .toast.bad { background: var(--bad); color: #fff; }
 dialog { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); padding: 0; width: min(560px, calc(100vw - 32px)); }
+#editorsDlg { width: min(780px, calc(100vw - 32px)); }
+#editorsList td:last-child { white-space: normal !important; } #editorsList td:last-child .btn { margin: 2px 0; }
 dialog::backdrop { background: rgba(0,0,0,.35); }
 .dlg-b { padding: 16px; }
 table { width: 100%; border-collapse: collapse; font-size: .9rem; }
@@ -94,7 +99,8 @@ th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color:
     <div class="brand"><i></i>Guide Admin</div>
     <span id="who" class="who" hidden></span>
     <a class="btn small" href="../features.html" target="_blank" rel="noopener">View page ↗</a>
-    <button id="editorsBtn" class="btn small" type="button" hidden>Editors</button>
+    <button id="editorsBtn" class="btn small" type="button" hidden>Users</button>
+    <button id="pwBtn" class="btn small" type="button" hidden>My password</button>
     <button id="logoutBtn" class="btn small" type="button" hidden>Log out</button>
   </div>
 </header>
@@ -136,28 +142,42 @@ th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color:
 </main>
 
 <dialog id="editorsDlg">
-  <div class="panel-h"><h2>Editors</h2><button class="btn small" type="button" data-close>Close</button></div>
+  <div class="panel-h"><h2>Users</h2><button class="btn small" type="button" data-close>Close</button></div>
   <div class="dlg-b">
-    <p class="muted" style="margin-top:0">People who can log in here and change the page.</p>
-    <table><thead><tr><th>Name</th><th>Email</th><th></th></tr></thead><tbody id="editorsList"></tbody></table>
-    <h3 style="font-size:1rem;margin:18px 0 8px">Add an editor</h3>
+    <p class="muted" style="margin-top:0">People who can log in here. <b>Simple User</b> views only · <b>QA</b> edits card text and tags · <b>Developer</b> edits everything · <b>Manager</b> also manages users · <b>Owner</b> also manages Owners.</p>
+    <div style="overflow-x:auto"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead><tbody id="editorsList"></tbody></table></div>
+    <h3 style="font-size:1rem;margin:18px 0 8px">Add a user</h3>
     <form id="addEditor">
       <div class="err" hidden></div>
       <div class="grid2">
         <label class="field"><span>Name</span><input name="name" maxlength="100"></label>
         <label class="field"><span>Email</span><input name="email" type="email" required></label>
       </div>
+      <label class="field"><span>Role</span><select name="role" id="newRole"></select></label>
       <label class="field"><span>Password</span><input name="password" type="password" autocomplete="new-password" minlength="10" required><span class="hint">At least 10 characters. Give it to them in person, not in a group chat.</span></label>
-      <button class="btn primary" type="submit">Add editor</button>
+      <button class="btn primary" type="submit">Add user</button>
     </form>
   </div>
+</dialog>
+
+<dialog id="pwDlg">
+  <div class="panel-h"><h2>My password</h2><button class="btn small" type="button" data-close>Close</button></div>
+  <form id="pwForm" class="dlg-b">
+    <div class="err" hidden></div>
+    <label class="field"><span>Current password</span><input name="currentPassword" type="password" autocomplete="current-password" required></label>
+    <label class="field"><span>New password</span><input name="password" type="password" autocomplete="new-password" minlength="10" required><span class="hint">At least 10 characters.</span></label>
+    <button class="btn primary" type="submit">Change password</button>
+  </form>
 </dialog>
 
 <script src="../assets/md.js"></script>
 <script>
 (function () {
   var M = window.guideMd, esc = M.esc, $ = function (s) { return document.querySelector(s); };
-  var state = { admin: null, sections: [], sel: null }; // sel: { kind: 'section' | 'card', id | null, sectionId }
+  var state = { admin: null, roles: {}, sections: [], sel: null }; // sel: { kind: 'section' | 'card', id | null, sectionId }
+  /** What the logged-in user's role allows (the server checks it too) */
+  var can = function (a) { return !!(state.admin && state.admin.permissions && state.admin.permissions.indexOf(a) >= 0); };
+  var roleName = function (r) { return state.roles[r] || r; };
   var TAGS = ['', 'in use', 'ready', 'new', 'planned'];
 
   function call(method, path, body) {
@@ -184,14 +204,17 @@ th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color:
 
   function setAdmin(a) {
     state.admin = a;
-    $('#who').textContent = a ? (a.name || a.email) : ''; $('#who').hidden = !a;
-    $('#editorsBtn').hidden = $('#logoutBtn').hidden = !a;
+    $('#who').innerHTML = a ? esc(a.name || a.email) + '<span class="role">' + esc(roleName(a.role)) + '</span>' : ''; $('#who').hidden = !a;
+    $('#logoutBtn').hidden = $('#pwBtn').hidden = !a;
+    $('#editorsBtn').hidden = !can('users');
+    $('#newSection').hidden = !can('sections');
   }
 
   // ── start: setup, login or the editor
   function start() {
     show('loading');
     call('GET', 'me').then(function (d) {
+      state.roles = d.roles || {};
       if (d.admin) { setAdmin(d.admin); return load(); }
       return call('GET', 'setup').then(function (s) { show(s.needsSetup ? 'setup' : 'login'); });
     }).catch(function (e) { $('#loading').textContent = 'Cannot reach the server: ' + e.message; });
@@ -212,7 +235,7 @@ th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color:
       .catch(function (e) { if (e.status === 401) { setAdmin(null); show('login'); } else toast(e.message, true); });
   }
   function tagChip(t) { return t ? '<span class="tag ' + (t === 'in use' || t === 'new' ? 'used' : '') + '">' + esc(t) + '</span>' : ''; }
-  function moveBtns(kind, id) { return '<span class="mv"><button class="btn icon" type="button" data-move="up" data-kind="' + kind + '" data-id="' + id + '" aria-label="Move up">↑</button><button class="btn icon" type="button" data-move="down" data-kind="' + kind + '" data-id="' + id + '" aria-label="Move down">↓</button></span>'; }
+  function moveBtns(kind, id) { if (!can(kind === 'section' ? 'sections' : 'cards.manage')) return ''; return '<span class="mv"><button class="btn icon" type="button" data-move="up" data-kind="' + kind + '" data-id="' + id + '" aria-label="Move up">↑</button><button class="btn icon" type="button" data-move="down" data-kind="' + kind + '" data-id="' + id + '" aria-label="Move down">↓</button></span>'; }
   function drawTree() {
     var sel = state.sel || {};
     $('#tree').innerHTML = state.sections.length ? state.sections.map(function (s) {
@@ -221,7 +244,7 @@ th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color:
         '<ul class="cards">' + s.cards.map(function (c) {
           return '<li><div class="item' + (sel.kind === 'card' && sel.id === c.id ? ' on' : '') + '" data-kind="card" data-id="' + c.id + '" tabindex="0">' +
             '<span class="t">' + esc(c.title) + '</span>' + (c.published ? '' : '<span class="tag off">hidden</span>') + tagChip(c.tag) + moveBtns('card', c.id) + '</div></li>';
-        }).join('') + '</ul><button class="btn small add-card" type="button" data-add-card="' + s.id + '">+ Card</button></li>';
+        }).join('') + '</ul>' + (can('cards.manage') ? '<button class="btn small add-card" type="button" data-add-card="' + s.id + '">+ Card</button>' : '') + '</li>';
     }).join('') : '<li class="empty">No sections yet.</li>';
   }
   $('#tree').addEventListener('click', function (ev) {
@@ -258,27 +281,31 @@ th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color:
     var r = sel.id ? find(sel) : null;
     if (sel.id && !r) { state.sel = null; return drawEditor(); }
     $('#edMeta').textContent = r && r.updated_at ? 'Saved ' + new Date(r.updated_at).toLocaleString() : '';
+    var edit = sel.kind === 'section' ? can('sections') : can('cards.edit');
+    var manage = sel.kind === 'section' ? can('sections') : can('cards.manage');
+    var note = !edit ? '<div class="note">Your role (' + esc(roleName(state.admin.role)) + ') can view this but not change it.</div>'
+      : !manage ? '<div class="note">Your role (' + esc(roleName(state.admin.role)) + ') can change the text and tag. Adding, moving, hiding and deleting cards is for Developers and above.</div>' : '';
     if (sel.kind === 'section') {
       r = r || { slug: '', title: '', lead: '', tag: '', published: true };
       $('#edTitle').textContent = sel.id ? 'Edit section' : 'New section';
-      ed.innerHTML = '<form id="edForm"><div class="err" hidden></div>' +
+      ed.innerHTML = '<form id="edForm">' + note + '<div class="err" hidden></div><fieldset style="border:0;margin:0;padding:0"' + (edit ? '' : ' disabled') + '>' +
         '<label class="field"><span>Title</span><input name="title" maxlength="120" required value="' + esc(r.title) + '"></label>' +
         '<div class="grid2"><label class="field"><span>Link name</span><input name="slug" maxlength="60" required pattern="[a-z0-9][a-z0-9-]*" value="' + esc(r.slug) + '"><span class="hint">For links like features.html#cashier. Lower-case, digits, dashes.</span></label>' +
         '<label class="field"><span>Tag</span><select name="tag">' + TAGS.map(function (t) { return opt(t, r.tag); }).join('') + '</select></label></div>' +
         '<label class="field"><span>Introduction</span><input name="lead" maxlength="2000" value="' + esc(r.lead) + '"><span class="hint">One line under the title. **bold**, `code` and [links](index.html) work.</span></label>' +
         '<label class="check"><input type="checkbox" name="published"' + (r.published ? ' checked' : '') + '> Show on the page</label>' +
-        '<div class="row" style="margin-top:14px"><button class="btn primary" type="submit">Save</button>' + (sel.id ? '<button class="btn danger" type="button" id="delBtn">Delete section</button>' : '') + '</div></form>';
+        '</fieldset>' + (edit ? '<div class="row" style="margin-top:14px"><button class="btn primary" type="submit">Save</button>' + (sel.id ? '<button class="btn danger" type="button" id="delBtn">Delete section</button>' : '') + '</div>' : '') + '</form>';
     } else {
       r = r || { section_id: sel.sectionId, title: '', tag: '', path: '', body: '- ', published: true };
       $('#edTitle').textContent = sel.id ? 'Edit card' : 'New card';
-      ed.innerHTML = '<form id="edForm"><div class="err" hidden></div>' +
+      ed.innerHTML = '<form id="edForm">' + note + '<div class="err" hidden></div><fieldset style="border:0;margin:0;padding:0"' + (edit ? '' : ' disabled') + '>' +
         '<div class="grid2"><label class="field"><span>Title</span><input name="title" maxlength="120" required value="' + esc(r.title) + '"></label>' +
-        '<label class="field"><span>Section</span><select name="section_id">' + state.sections.map(function (s) { return '<option value="' + s.id + '"' + (s.id === r.section_id ? ' selected' : '') + '>' + esc(s.title) + '</option>'; }).join('') + '</select></label></div>' +
+        '<label class="field"><span>Section</span><select name="section_id"' + (manage ? '' : ' disabled') + '>' + state.sections.map(function (s) { return '<option value="' + s.id + '"' + (s.id === r.section_id ? ' selected' : '') + '>' + esc(s.title) + '</option>'; }).join('') + '</select></label></div>' +
         '<div class="grid2"><label class="field"><span>Tag</span><select name="tag">' + TAGS.map(function (t) { return opt(t, r.tag); }).join('') + '</select></label>' +
         '<label class="field"><span>Page address (optional)</span><input name="path" maxlength="120" placeholder="/pos" value="' + esc(r.path) + '"></label></div>' +
         '<label class="field"><span>Text</span><textarea name="body" maxlength="20000" spellcheck="true">' + esc(r.body) + '</textarea><span class="hint">One point per line starting with "- ". Use **bold**, `code`, [link](index.html#hosting), and ## for a small heading.</span></label>' +
-        '<label class="check"><input type="checkbox" name="published"' + (r.published ? ' checked' : '') + '> Show on the page</label>' +
-        '<div class="row" style="margin-top:14px"><button class="btn primary" type="submit">Save</button>' + (sel.id ? '<button class="btn danger" type="button" id="delBtn">Delete card</button>' : '') + '</div>' +
+        '<label class="check"><input type="checkbox" name="published"' + (r.published ? ' checked' : '') + (manage ? '' : ' disabled') + '> Show on the page</label></fieldset>' +
+        (edit ? '<div class="row" style="margin-top:14px"><button class="btn primary" type="submit">Save</button>' + (sel.id && manage ? '<button class="btn danger" type="button" id="delBtn">Delete card</button>' : '') + '</div>' : '') +
         '<div class="preview"><div class="label">Preview</div><div class="pcard" id="pv"></div></div></form>';
       preview();
     }
@@ -296,7 +323,7 @@ th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color:
     ev.preventDefault();
     var f = ev.target, sel = state.sel, d = formData(f);
     d.published = f.published.checked;
-    if (sel.kind === 'card') d.section_id = +d.section_id;
+    if (sel.kind === 'card') d.section_id = +(d.section_id || f.section_id.value);
     if (sel.id) d.id = sel.id;
     var path = 'admin/' + (sel.kind === 'section' ? 'sections' : 'cards');
     showErr(f);
@@ -316,16 +343,40 @@ th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color:
   var dlg = $('#editorsDlg');
   dlg.querySelector('[data-close]').addEventListener('click', function () { dlg.close(); });
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
-  $('#editorsBtn').addEventListener('click', function () { drawEditors(); dlg.showModal(); });
+  // roles this user may give: everything below Owner, and Owner only for Owners
+  function givable() { return Object.keys(state.roles).filter(function (r) { return r !== 'owner' || can('owners'); }); }
+  function roleSelect(cur, id, locked) {
+    var opts = givable(); if (opts.indexOf(cur) < 0) opts = opts.concat(cur);
+    return '<select data-role="' + id + '"' + (locked ? ' disabled' : '') + ' aria-label="Role">' + opts.map(function (r) { return '<option value="' + r + '"' + (r === cur ? ' selected' : '') + '>' + esc(roleName(r)) + '</option>'; }).join('') + '</select>';
+  }
+  $('#editorsBtn').addEventListener('click', function () {
+    $('#newRole').innerHTML = givable().map(function (r) { return '<option value="' + r + '"' + (r === 'user' ? ' selected' : '') + '>' + esc(roleName(r)) + '</option>'; }).join('');
+    drawEditors(); dlg.showModal();
+  });
   function drawEditors() {
     call('GET', 'admin/admins').then(function (list) {
       $('#editorsList').innerHTML = list.map(function (a) {
-        return '<tr><td>' + esc(a.name || '—') + '</td><td>' + esc(a.email) + '</td><td style="text-align:right;white-space:nowrap">' +
-          '<button class="btn small" type="button" data-pw="' + a.id + '">New password</button> ' +
-          (a.id === state.admin.id ? '<span class="hint">you</span>' : '<button class="btn small danger" type="button" data-rm="' + a.id + '" data-email="' + esc(a.email) + '">Remove</button>') + '</td></tr>';
+        var locked = a.role === 'owner' && !can('owners'), mine = a.id === state.admin.id;
+        return '<tr><td>' + esc(a.name || '—') + '</td><td>' + esc(a.email) + '</td><td>' + roleSelect(a.role, a.id, locked || mine) + '</td><td style="text-align:right;white-space:nowrap">' +
+          (mine ? '<span class="hint">you</span>' : locked ? '' :
+            '<button class="btn small" type="button" data-pw="' + a.id + '">New password</button> <button class="btn small danger" type="button" data-rm="' + a.id + '" data-email="' + esc(a.email) + '">Remove</button>') + '</td></tr>';
       }).join('');
     }).catch(function (e) { toast(e.message, true); });
   }
+  $('#editorsList').addEventListener('change', function (ev) {
+    var sel = ev.target.closest('[data-role]'); if (!sel) return;
+    call('PUT', 'admin/admins', { id: +sel.dataset.role, role: sel.value }).then(function () { toast('Role changed to ' + roleName(sel.value)); drawEditors(); })
+      .catch(function (e) { toast(e.message, true); drawEditors(); });
+  });
+
+  // ── my password
+  var pwDlg = $('#pwDlg');
+  pwDlg.querySelector('[data-close]').addEventListener('click', function () { pwDlg.close(); });
+  $('#pwBtn').addEventListener('click', function () { showErr($('#pwForm')); pwDlg.showModal(); });
+  $('#pwForm').addEventListener('submit', function (ev) {
+    ev.preventDefault(); var f = ev.target; showErr(f);
+    call('PUT', 'me', formData(f)).then(function () { f.reset(); pwDlg.close(); toast('Password changed'); }).catch(function (e) { showErr(f, e); });
+  });
   $('#editorsList').addEventListener('click', function (ev) {
     var pw = ev.target.closest('[data-pw]'), rm = ev.target.closest('[data-rm]');
     if (pw) {
@@ -338,7 +389,7 @@ th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color:
   });
   $('#addEditor').addEventListener('submit', function (ev) {
     ev.preventDefault(); var f = ev.target; showErr(f);
-    call('POST', 'admin/admins', formData(f)).then(function () { f.reset(); toast('Editor added'); drawEditors(); }).catch(function (e) { showErr(f, e); });
+    call('POST', 'admin/admins', formData(f)).then(function () { f.reset(); toast('User added'); drawEditors(); }).catch(function (e) { showErr(f, e); });
   });
 
   start();

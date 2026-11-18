@@ -5,6 +5,7 @@ import { hashPassword, checkNewPassword, startSession } from '../lib/auth.js';
 import { db, ensureSchema, q } from '../lib/db.js';
 import { api, HttpError, text } from '../lib/http.js';
 import seed from '../lib/seed.js';
+import { permissions } from '../lib/roles.js';
 
 const same = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && timingSafeEqual(x, y); };
 
@@ -32,7 +33,8 @@ export default api(['GET', 'POST'], async (req, res, body) => {
     await client.query('LOCK TABLE guide_admins IN EXCLUSIVE MODE');
     const again = await client.query('SELECT count(*)::int AS n FROM guide_admins');
     if (again.rows[0].n > 0) throw new HttpError(409, 'Setup is already done. Log in instead.');
-    const admin = (await client.query('INSERT INTO guide_admins (email, name, password_hash) VALUES ($1, $2, $3) RETURNING id, email, name', [email, name, await hashPassword(body.password)])).rows[0];
+    const admin = (await client.query(`INSERT INTO guide_admins (email, name, password_hash, role) VALUES ($1, $2, $3, 'owner') RETURNING id, email, name, role`, [email, name, await hashPassword(body.password)])).rows[0];
+    admin.permissions = permissions('owner');
     const has = await client.query('SELECT count(*)::int AS n FROM guide_sections');
     if (has.rows[0].n === 0) {
       for (const [i, s] of seed.sections.entries()) {

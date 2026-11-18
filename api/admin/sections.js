@@ -1,5 +1,5 @@
 // Admin: sections. POST create · PUT update (or { id, move: 'up' | 'down' }) · DELETE ?id= (its cards go too)
-import { requireAdmin } from '../../lib/auth.js';
+import { requireRole } from '../../lib/auth.js';
 import { db, ensureSchema, q } from '../../lib/db.js';
 import { api, HttpError, int, tag, text } from '../../lib/http.js';
 import { move } from '../../lib/order.js';
@@ -12,7 +12,7 @@ function fields(b) {
 
 export default api(['POST', 'PUT', 'DELETE'], async (req, res, body) => {
   await ensureSchema();
-  const admin = await requireAdmin(req);
+  const admin = await requireRole(req, 'sections');
   try {
     if (req.method === 'POST') {
       const f = fields(body);
