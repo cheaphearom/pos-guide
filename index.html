@@ -76,6 +76,22 @@
     if (page.intro) { var intro = R.md(page.intro, 'intro'); head.appendChild(intro); }
     main.appendChild(head);
     d.blocks.forEach(function (b) { main.appendChild(R.block(b)); });
+    // quick reference card layout: every ### heading starts a box; the boxes sit in a grid (one landscape sheet per block)
+    main.classList.toggle('layout-card', page.layout === 'card');
+    if (page.layout === 'card') [].forEach.call(main.querySelectorAll(':scope > section > .prose'), function (pr) {
+      var box = null, kids = [].slice.call(pr.childNodes), grid = document.createElement('div'); grid.className = 'qgrid';
+      kids.forEach(function (n) {
+        if (n.nodeType === 1 && n.tagName === 'H3') { box = document.createElement('div'); box.className = 'qcard'; grid.appendChild(box); }
+        if (box) box.appendChild(n);
+      });
+      if (grid.children.length) pr.appendChild(grid);
+    });
+    if (page.layout === 'card') {
+      var pb = document.createElement('div'); pb.className = 'tickbar no-print';
+      pb.innerHTML = '<b>Print it for the counter: one landscape sheet per card.</b><span class="sp"></span><button type="button" class="btn-lite">Print</button>';
+      pb.querySelector('button').onclick = function () { window.print(); };
+      head.appendChild(pb);
+    }
     var up = document.createElement('p'); up.className = 'updated';
     up.textContent = 'Last updated ' + new Date(d.updatedAt).toLocaleString();
     main.appendChild(up);

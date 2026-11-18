@@ -302,10 +302,12 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
     $('#edMeta').textContent = r && r.updated_at ? 'Saved ' + new Date(r.updated_at).toLocaleString() + (r.updated_by ? ' by ' + r.updated_by : '') : '';
     var h = '<form id="edForm"><div class="err" hidden></div>', foot = '', pv = false;
     if (sel.kind === 'page') {
-      r = r || { title: '', slug: '', intro: '', published: true, viewers: [] };
+      r = r || { title: '', slug: '', intro: '', published: true, viewers: [], layout: '' };
       $('#edTitle').textContent = sel.id ? 'Edit page' : 'New page';
       h += '<div class="grid2">' + input('title', 'Title', r.title, 'maxlength="120" required') + '<label class="field"><span>Page address</span><input name="slug" value="' + esc(r.slug) + '" maxlength="60" required pattern="[a-z0-9][a-z0-9-]*"><span class="hint">The link is index.html?p=<b>address</b>. Lower-case, digits, dashes.</span></label></div>' +
         '<label class="field"><span>Introduction (optional)</span><textarea name="intro" data-rich="200" style="min-height:120px">' + esc(r.intro) + '</textarea></label>' +
+        '<label class="field"><span>Layout</span><select name="layout"><option value=""' + (r.layout ? '' : ' selected') + '>Normal page</option><option value="card"' + (r.layout === 'card' ? ' selected' : '') + '>Quick reference card: compact boxes, prints one landscape sheet per block</option></select>' +
+        '<span class="hint">For a reference card, start each box in a block with a <b>### heading</b>.</span></label>' +
         '<div class="field"><span>Who can see this page</span><div class="viewers">' +
           Object.keys(S.roles).filter(function (k) { return k !== 'owner'; }).map(function (k) {
             var all = !r.viewers || !r.viewers.length;
