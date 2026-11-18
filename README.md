@@ -14,10 +14,12 @@ The pages hold no content themselves: everything is loaded from the API after lo
 
 | | QA | Developer | Manager | Owner |
 |---|:-:|:-:|:-:|:-:|
-| Log in and read every page | ✓ | ✓ | ✓ | ✓ |
+| Log in and read the pages open to their role (see below) | ✓ | ✓ | ✓ | ✓ |
 | Change their own password | ✓ | ✓ | ✓ | ✓ |
 | Edit pages, blocks and cards in the admin portal | | | | ✓ |
 | Add people, set their role, reset passwords, remove them | | | | ✓ |
+
+**Who can see a page** is set per page in the admin portal (**Edit page → Who can see this page**): untick a role to hide the page from it, in the menu and on the server (asking for it directly answers "Page not found"). All ticked = everyone; the Owner always sees every page. By default the **System guide** is for Developer, Manager and Owner, so **QA sees Features and How to use** (set once on every database; the Owner can change it).
 
 The person created at first setup is the **Owner**; there is always at least one. The server checks the role on every request. To change the rules, edit `lib/roles.js`.
 

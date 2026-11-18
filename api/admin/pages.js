@@ -3,8 +3,9 @@ import { requireRole } from '../../lib/auth.js';
 import { db, ensureSchema, q } from '../../lib/db.js';
 import { api, HttpError, int, slug, text } from '../../lib/http.js';
 import { move } from '../../lib/order.js';
+import { viewers } from '../../lib/access.js';
 
-const fields = (b) => ({ slug: slug(b.slug, 'Page address'), title: text(b.title, 'Title', 120, { required: true }), intro: text(b.intro, 'Introduction', 4000), published: b.published !== false });
+const fields = (b) => ({ slug: slug(b.slug, 'Page address'), title: text(b.title, 'Title', 120, { required: true }), intro: text(b.intro, 'Introduction', 4000), published: b.published !== false, viewers: viewers(b.viewers) });
 
 export default api(['POST', 'PUT', 'DELETE'], async (req, res, body) => {
   await ensureSchema();
@@ -12,15 +13,15 @@ export default api(['POST', 'PUT', 'DELETE'], async (req, res, body) => {
   try {
     if (req.method === 'POST') {
       const f = fields(body);
-      return (await q(`INSERT INTO guide_pages (slug, title, intro, published, sort_order, updated_by)
-        VALUES ($1,$2,$3,$4,(SELECT coalesce(max(sort_order),0)+10 FROM guide_pages),$5) RETURNING *`, [f.slug, f.title, f.intro, f.published, me.email])).rows[0];
+      return (await q(`INSERT INTO guide_pages (slug, title, intro, published, viewers, sort_order, updated_by)
+        VALUES ($1,$2,$3,$4,$5,(SELECT coalesce(max(sort_order),0)+10 FROM guide_pages),$6) RETURNING *`, [f.slug, f.title, f.intro, f.published, f.viewers, me.email])).rows[0];
     }
     if (req.method === 'PUT') {
       const id = int(body.id, 'id');
       if (body.move) return move(db(), 'guide_pages', id, body.move, null);
       const f = fields(body);
-      const row = (await q('UPDATE guide_pages SET slug=$2, title=$3, intro=$4, published=$5, updated_at=now(), updated_by=$6 WHERE id=$1 RETURNING *',
-        [id, f.slug, f.title, f.intro, f.published, me.email])).rows[0];
+      const row = (await q('UPDATE guide_pages SET slug=$2, title=$3, intro=$4, published=$5, viewers=$6, updated_at=now(), updated_by=$7 WHERE id=$1 RETURNING *',
+        [id, f.slug, f.title, f.intro, f.published, f.viewers, me.email])).rows[0];
       if (!row) throw new HttpError(404, 'Page not found');
       return row;
     }
