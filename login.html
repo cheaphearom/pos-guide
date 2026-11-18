@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>Log in · BROWN POS Guide</title>
+<script src="assets/theme.js"></script>
 <link rel="stylesheet" href="assets/site.css">
 <style>
 body { display: grid; place-items: center; min-height: 100vh; padding: 16px; }
@@ -21,9 +22,13 @@ button { width: 100%; border: 0; border-radius: 9px; padding: 10px; background: 
 button:disabled { opacity: .6; cursor: default; }
 .err { color: #b3261e; background: #fbe9e7; border-radius: 9px; padding: 8px 10px; margin-bottom: 12px; font-size: 14px; }
 .who { color: var(--muted); font-size: 12.5px; margin-top: 16px; text-align: center; }
+.theme-btn.corner { position: fixed; top: 14px; right: 14px; width: auto; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .err { background: #3a1c19; color: #f2867b; } }
+:root[data-theme="dark"] .err { background: #3a1c19; color: #f2867b; }
 </style>
 </head>
 <body>
+<button type="button" class="theme-btn corner" data-theme-btn></button>
 <main class="box">
   <div class="brand"><i></i>BROWN POS Guide</div>
   <p id="wait" class="sub">Loading…</p>

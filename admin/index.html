@@ -5,12 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>Guide Admin</title>
+<script src="../assets/theme.js"></script>
 <link rel="stylesheet" href="../assets/site.css">
 <link rel="stylesheet" href="../assets/vendor/toastui-editor.css">
 <link rel="stylesheet" href="../assets/vendor/toastui-editor-dark.css">
 <style>
 :root { --bad: #b3261e; --bad-soft: #fbe9e7; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bad: #f2867b; --bad-soft: #3a1c19; } }
+:root[data-theme="dark"] { --bad: #f2867b; --bad-soft: #3a1c19; }
 body { font-size: 15px; }
 button, input, select, textarea { font: inherit; color: inherit; }
 [hidden] { display: none !important; }
@@ -89,6 +91,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
   <div class="atop-in">
     <div class="abrand"><i></i>Guide Admin</div>
     <span id="who" class="who"></span>
+    <button type="button" class="btn small theme-btn" data-theme-btn></button>
     <a class="btn small" href="../index.html">View the guide</a>
     <button id="usersBtn" class="btn small" type="button" hidden>Users</button>
     <button id="pwBtn" class="btn small" type="button" hidden>My password</button>
@@ -259,7 +262,12 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
   function input(name, label, val, extra) { return '<label class="field"><span>' + label + '</span><input name="' + name + '" value="' + esc(val) + '" ' + (extra || '') + '></label>'; }
   // ── visual editors (Toast UI): the text box stays (hidden) and always holds the Markdown that is saved
   var editors = [];
-  var darkMode = function () { return matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.getAttribute('data-theme') !== 'light'; };
+  var darkMode = function () { return window.guideTheme ? window.guideTheme.isDark() : matchMedia('(prefers-color-scheme: dark)').matches; };
+  // light / dark switched: the open editors change colour too (the text stays as it is)
+  addEventListener('guide-theme', function () {
+    [].forEach.call(document.querySelectorAll('.rich .toastui-editor-defaultUI'), function (el) { el.classList.toggle('toastui-editor-dark', darkMode()); });
+    if (S.sel) preview();
+  });
   function unmountEditors() { editors.forEach(function (e) { try { e.destroy(); } catch (x) { /* already gone */ } }); editors = []; }
   function mountEditors(form) {
     if (!window.ToastEditor) return; // the plain text box still works

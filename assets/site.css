@@ -208,3 +208,8 @@ main, main > *, .doc-sec, .doc-sec > *, .prose, .generated, .fgrid, .fcard { min
 .prose .tscroll, .generated .tscroll { overflow-x: auto; max-width: 100%; }
 .query pre, .prose pre { overflow-x: auto; max-width: 100%; }
 .dfig, .mscroll { max-width: 100%; overflow-x: auto; }
+
+/* light / dark switch */
+.theme-btn { margin-left: auto; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; white-space: nowrap; }
+.theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+.rail .brand { display: flex; align-items: center; gap: 8px; }
