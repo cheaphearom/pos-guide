@@ -37,6 +37,8 @@ Tags: **in use** (used with real store data), **ready** (built, not yet used wit
 
 On first use the database is filled with the **System guide** (BRD, SDD, data flow diagrams, hosting, how the server works, getting started, database, data flows, value lists, queries, technology terms) and **Features**. A database from the earlier portal keeps its Features content.
 
+A **How to use** page (42 parts: cashier screen, marketing, menu and stores, back office; each with who, where, a **user flow diagram**, steps, what happens, good to know) is added once to every database, new or existing, as a **content pack** (`lib/packs/`). It is recorded in the `guide_meta` table, so it is never added twice, and if the Owner deletes or renames it, it does not come back. To ship another page the same way, add a pack to `lib/packs/index.js`.
+
 ## Set it up (Neon + Vercel)
 
 1. **Neon** ([neon.tech](https://neon.tech), the free plan is enough): create a project, then **Connect** → copy the connection string (`postgresql://…neon.tech/neondb?sslmode=require`).
