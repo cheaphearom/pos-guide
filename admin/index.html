@@ -6,6 +6,8 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Guide Admin</title>
 <link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/vendor/toastui-editor.css">
+<link rel="stylesheet" href="../assets/vendor/toastui-editor-dark.css">
 <style>
 :root { --bad: #b3261e; --bad-soft: #fbe9e7; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bad: #f2867b; --bad-soft: #3a1c19; } }
@@ -51,12 +53,20 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .field textarea.big { min-height: 420px; }
 .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color: var(--accent); }
 .hint { font-size: .78rem; color: var(--muted); }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: start; }
 .check { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .err { color: var(--bad); background: var(--bad-soft); border-radius: 9px; padding: 8px 10px; margin-bottom: 12px; font-size: .9rem; }
 .preview { border-top: 1px dashed var(--line); margin-top: 14px; padding-top: 12px; }
+/* visual editor (Toast UI) */
+.rich { border-radius: 10px; overflow: hidden; }
+.rich .toastui-editor-defaultUI { border-color: var(--line); border-radius: 10px; }
+.rich .toastui-editor-contents { font-family: inherit; font-size: 15px; }
+.rich .toastui-editor-contents h2 { border-bottom: 0; }
+.rich .toastui-editor-defaultUI-toolbar { flex-wrap: wrap; }
+.rich .toastui-editor-toolbar { height: auto; }
+.richhint { margin-top: 4px; }
 .preview > .label { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 6px; }
 .preview .pv { border: 1px solid var(--line); border-radius: 12px; padding: 4px 16px 12px; background: var(--bg); max-height: 70vh; overflow: auto; }
 .empty { padding: 30px 16px; text-align: center; color: var(--muted); }
@@ -141,6 +151,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
 <script src="../assets/vendor/purify.min.js"></script>
 <script src="../assets/vendor/mermaid.min.js"></script>
 <script src="../assets/render.js"></script>
+<script src="../assets/vendor/toastui-editor.min.js"></script>
 <script>
 (function () {
   var R = window.guideRender, esc = R.esc, $ = function (s) { return document.querySelector(s); };
@@ -246,7 +257,30 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
   // ── editor
   function opt(v, cur, label) { return '<option value="' + esc(v) + '"' + (String(v) === String(cur) ? ' selected' : '') + '>' + esc(label || v || '(none)') + '</option>'; }
   function input(name, label, val, extra) { return '<label class="field"><span>' + label + '</span><input name="' + name + '" value="' + esc(val) + '" ' + (extra || '') + '></label>'; }
+  // ── visual editors (Toast UI): the text box stays (hidden) and always holds the Markdown that is saved
+  var editors = [];
+  var darkMode = function () { return matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.getAttribute('data-theme') !== 'light'; };
+  function unmountEditors() { editors.forEach(function (e) { try { e.destroy(); } catch (x) { /* already gone */ } }); editors = []; }
+  function mountEditors(form) {
+    if (!window.ToastEditor) return; // the plain text box still works
+    [].forEach.call(form.querySelectorAll('textarea[data-rich]'), function (ta) {
+      // not inside a <label>: a click there would jump to the first toolbar button instead of the text
+      var lab = ta.closest('label');
+      if (lab) { var box = document.createElement('div'); box.className = lab.className; while (lab.firstChild) box.appendChild(lab.firstChild); lab.parentNode.replaceChild(box, lab); }
+      var host = document.createElement('div'); host.className = 'rich';
+      ta.parentNode.insertBefore(host, ta); ta.hidden = true;
+      var ed = new window.ToastEditor({
+        el: host, initialValue: ta.value, initialEditType: 'wysiwyg', previewStyle: 'tab', height: ta.getAttribute('data-rich') + 'px',
+        usageStatistics: false, autofocus: false, theme: darkMode() ? 'dark' : 'light',
+        toolbarItems: [['heading', 'bold', 'italic', 'strike'], ['hr', 'quote'], ['ul', 'ol'], ['table', 'link'], ['code', 'codeblock']],
+      });
+      ta.value = ed.getMarkdown();
+      ed.on('change', function () { ta.value = ed.getMarkdown(); ta.dispatchEvent(new Event('input', { bubbles: true })); });
+      editors.push(ed);
+    });
+  }
   function drawEditor() {
+    unmountEditors();
     var sel = S.sel, ed = $('#editor');
     if (!sel) { $('#edTitle').textContent = 'Choose something to edit'; $('#edMeta').textContent = ''; ed.innerHTML = '<div class="empty">Click a page, a block or a card on the left, or add a new one.</div>'; return; }
     var r = sel.id ? find(sel) : null;
@@ -257,7 +291,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
       r = r || { title: '', slug: '', intro: '', published: true };
       $('#edTitle').textContent = sel.id ? 'Edit page' : 'New page';
       h += '<div class="grid2">' + input('title', 'Title', r.title, 'maxlength="120" required') + '<label class="field"><span>Page address</span><input name="slug" value="' + esc(r.slug) + '" maxlength="60" required pattern="[a-z0-9][a-z0-9-]*"><span class="hint">The link is index.html?p=<b>address</b>. Lower-case, digits, dashes.</span></label></div>' +
-        '<label class="field"><span>Introduction (Markdown, optional)</span><textarea name="intro" style="min-height:120px">' + esc(r.intro) + '</textarea></label>';
+        '<label class="field"><span>Introduction (optional)</span><textarea name="intro" data-rich="200" style="min-height:120px">' + esc(r.intro) + '</textarea></label>';
       foot = sel.id ? '<button class="btn danger" type="button" id="delBtn">Delete page</button>' : '';
       pv = true;
     } else if (sel.kind === 'block') {
@@ -268,7 +302,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
         '<label class="field"><span>Tag</span><select name="tag">' + TAGS.map(function (t) { return opt(t, r.tag); }).join('') + '</select></label></div>' +
         '<div class="grid2">' + input('title', 'Title', r.title, 'maxlength="160" required') + '<label class="field"><span>Link name</span><input name="anchor" value="' + esc(r.anchor) + '" maxlength="60" required pattern="[a-z0-9][a-z0-9-]*"><span class="hint">For links like index.html#<b>link-name</b>.</span></label></div>' +
         '<label class="field" id="srcField"' + (r.kind === 'generated' ? '' : ' hidden') + '><span>Generated part</span><select name="source">' + Object.keys(GEN).map(function (k) { return opt(k, r.source, GEN[k]); }).join('') + '</select><span class="hint">Made from the POS code, so it cannot be edited here. You can hide it, move it, and write a note shown above it.</span></label>' +
-        '<label class="field"><span id="bodyLabel">' + bodyLabel(r.kind) + '</span><textarea name="body" class="big" spellcheck="true">' + esc(r.body) + '</textarea><span class="hint">Markdown: ## heading, - list, **bold**, `code`, [link](index.html?p=features#cashier), | tables |, ```sql code```, ```mermaid diagram```, > note.</span></label>';
+        '<label class="field"><span id="bodyLabel">' + bodyLabel(r.kind) + '</span><textarea name="body" class="big" data-rich="560" spellcheck="true">' + esc(r.body) + '</textarea><span class="hint richhint">Use the toolbar like in Word: headings, bold, lists, table, link, code, quote (shown as a note). For a diagram, add a code block and type <b>mermaid</b> as its language. The <b>Markdown</b> tab (bottom right) shows the raw text.</span></label>';
       foot = sel.id ? '<button class="btn danger" type="button" id="delBtn">Delete block</button>' : '';
       pv = true;
     } else {
@@ -277,26 +311,28 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
       var blocks = [].concat.apply([], Object.keys(S.open).map(function (pid) { return S.open[pid].blocks.filter(function (b) { return b.kind === 'cards'; }).map(function (b) { return { id: b.id, label: S.open[pid].page.title + ' › ' + b.title }; }); }));
       h += '<div class="grid2">' + input('title', 'Title', r.title, 'maxlength="120" required') + '<label class="field"><span>Block</span><select name="block_id">' + blocks.map(function (b) { return opt(b.id, r.block_id, b.label); }).join('') + '</select></label></div>' +
         '<div class="grid2"><label class="field"><span>Tag</span><select name="tag">' + TAGS.map(function (t) { return opt(t, r.tag); }).join('') + '</select></label>' + input('path', 'Page address in the POS (optional)', r.path, 'maxlength="120" placeholder="/pos"') + '</div>' +
-        '<label class="field"><span>Text (Markdown)</span><textarea name="body" spellcheck="true">' + esc(r.body) + '</textarea><span class="hint">One point per line starting with "- ". **bold**, `code`, [link](index.html#hosting).</span></label>';
+        '<label class="field"><span>Text</span><textarea name="body" data-rich="300" spellcheck="true">' + esc(r.body) + '</textarea><span class="hint richhint">Use the toolbar: a bulleted list works best on a card.</span></label>';
       foot = sel.id ? '<button class="btn danger" type="button" id="delBtn">Delete card</button>' : '';
       pv = true;
     }
     h += '<label class="check"><input type="checkbox" name="published"' + (r.published ? ' checked' : '') + '> Show on the website</label>' +
       '<div class="row" style="margin-top:14px"><button class="btn primary" type="submit">Save</button>' + foot + '</div>' +
-      (pv ? '<div class="preview"><div class="label">Preview</div><div class="pv" id="pv"></div></div>' : '') + '</form>';
+      (pv ? '<div class="preview"><div class="label">How it looks on the website</div><div class="pv" id="pv"></div></div>' : '') + '</form>';
     ed.innerHTML = h;
     var f = $('#edForm');
     f.addEventListener('input', function (e) {
-      dirty = true;
+      dirty = JSON.stringify(data(f)) !== snapshot; // only real changes (not opening a block or switching tabs)
       if (e.target.name === 'kind') { $('#srcField').hidden = e.target.value !== 'generated'; $('#bodyLabel').textContent = bodyLabel(e.target.value); }
       schedulePreview();
     });
     f.addEventListener('submit', save);
     var d = $('#delBtn'); if (d) d.addEventListener('click', remove);
+    mountEditors(f);
+    var snapshot = JSON.stringify(data(f));
     preview();
     var first = f.querySelector('input[name=title]'); if (!sel.id && first) first.focus();
   }
-  function bodyLabel(kind) { return kind === 'generated' ? 'Note above the generated part (Markdown, optional)' : kind === 'cards' ? 'Introduction above the cards (Markdown, optional)' : 'Text (Markdown)'; }
+  function bodyLabel(kind) { return kind === 'generated' ? 'Note above the generated part (optional)' : kind === 'cards' ? 'Introduction above the cards (optional)' : 'Text'; }
   var pvt;
   function schedulePreview() { clearTimeout(pvt); pvt = setTimeout(preview, 250); }
   function preview() {
