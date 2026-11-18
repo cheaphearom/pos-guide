@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Log in · BROWN POS Guide</title>
+<link rel="stylesheet" href="assets/site.css">
+<style>
+body { display: grid; place-items: center; min-height: 100vh; padding: 16px; }
+.box { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 26px; }
+.brand { font-weight: 800; display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+.brand i { width: 14px; height: 14px; border-radius: 4px; background: var(--accent); display: inline-block; }
+h1 { font-size: 1.35rem; margin: 0 0 4px; }
+.sub { color: var(--muted); margin: 0 0 18px; }
+label { display: grid; gap: 4px; margin-bottom: 12px; font-size: 13px; font-weight: 650; color: var(--muted); }
+input { width: 100%; border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: var(--surface); color: var(--ink); font: inherit; font-size: 15px; }
+input:focus { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color: var(--accent); }
+.hint { font-weight: 400; font-size: 12px; }
+button { width: 100%; border: 0; border-radius: 9px; padding: 10px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+button:disabled { opacity: .6; cursor: default; }
+.err { color: #b3261e; background: #fbe9e7; border-radius: 9px; padding: 8px 10px; margin-bottom: 12px; font-size: 14px; }
+.who { color: var(--muted); font-size: 12.5px; margin-top: 16px; text-align: center; }
+</style>
+</head>
+<body>
+<main class="box">
+  <div class="brand"><i></i>BROWN POS Guide</div>
+  <p id="wait" class="sub">Loading…</p>
+
+  <form id="login" hidden>
+    <h1>Log in</h1>
+    <p class="sub">For BROWN POS team members: QA, Developer, Manager and Owner.</p>
+    <div class="err" hidden></div>
+    <label>Email<input name="email" type="email" autocomplete="username" required autofocus></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+    <button type="submit">Log in</button>
+    <p class="who">No account? Ask the Owner of the guide.</p>
+  </form>
+
+  <form id="setup" hidden>
+    <h1>First setup</h1>
+    <p class="sub">Create the Owner account. This also creates the tables in the database and fills in the System guide and Features pages.</p>
+    <div class="err" hidden></div>
+    <label>Setup key<input name="setupKey" type="password" autocomplete="off" required><span class="hint">The SETUP_KEY value from the hosting settings (Vercel) or your .env file.</span></label>
+    <label>Your name<input name="name" maxlength="100"></label>
+    <label>Email<input name="email" type="email" autocomplete="username" required></label>
+    <label>Password<input name="password" type="password" autocomplete="new-password" minlength="10" required><span class="hint">At least 10 characters.</span></label>
+    <button type="submit">Create the Owner and open the guide</button>
+  </form>
+</main>
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  // only go back to a page of this site
+  var next = new URLSearchParams(location.search).get('next') || '';
+  if (!/^\/(?!\/)/.test(next) || /^\/login\.html/.test(next)) next = '/';
+  function call(method, path, body) {
+    return fetch('api/' + path, { method: method, credentials: 'same-origin', headers: Object.assign({ Accept: 'application/json' }, body ? { 'Content-Type': 'application/json', 'X-Guide': '1' } : {}), body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) throw new Error(d.message || 'Error ' + r.status); return d; }); });
+  }
+  function show(id) { $('#wait').hidden = true; $('#login').hidden = id !== 'login'; $('#setup').hidden = id !== 'setup'; }
+  function data(f) { var o = {}; new FormData(f).forEach(function (v, k) { o[k] = v; }); return o; }
+  function send(f, path) {
+    f.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var err = f.querySelector('.err'), btn = f.querySelector('button'); err.hidden = true; btn.disabled = true;
+      call('POST', path, data(f)).then(function () { location.replace(next); })
+        .catch(function (e) { err.textContent = e.message; err.hidden = false; btn.disabled = false; });
+    });
+  }
+  send($('#login'), 'login');
+  send($('#setup'), 'setup');
+  call('GET', 'me').then(function (d) {
+    if (d.admin) return location.replace(next);
+    return call('GET', 'setup').then(function (s) { show(s.needsSetup ? 'setup' : 'login'); });
+  }).catch(function (e) { $('#wait').textContent = 'Cannot reach the server: ' + e.message; });
+})();
+</script>
+</body>
+</html>
