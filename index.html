@@ -145,13 +145,20 @@
     var toggle = function (el, show) { el.classList.toggle('hidden-by-search', !show); return show; };
     [].forEach.call(document.querySelectorAll('#main > section'), function (s) {
       if (!words.length) { [].forEach.call(s.querySelectorAll('.hidden-by-search'), function (x) { x.classList.remove('hidden-by-search'); }); toggle(s, true); return; }
-      var parts = s.querySelectorAll('.fcard, .tcard, .term, .enumcard, .flow, .query');
+      // generated parts and card groups are filtered card by card; text parts (also with code in them) as a whole
+      var parts = s.classList.contains('block-text') ? [] : s.querySelectorAll('.fcard, .tcard, .term, .enumcard, .flow, .query');
       if (parts.length) {
         var any = false;
         [].forEach.call(parts, function (p) { if (toggle(p, has(p))) any = true; });
         [].forEach.call(s.querySelectorAll('.domain, .tgroup'), function (g) { toggle(g, !!g.querySelector('.tcard:not(.hidden-by-search), .term:not(.hidden-by-search)')); });
-        toggle(s, any || has(s.querySelector('.dhead')));
-      } else toggle(s, has(s));
+        toggle(s, any || has(s.querySelector('.dhead') || s));
+      } else if (toggle(s, has(s))) {
+        // tables: when some rows match, show only those rows (and hide the tables with none)
+        var rows = s.querySelectorAll('.prose table tbody tr'), wraps = s.querySelectorAll('.prose .tscroll');
+        var hit = [].some.call(rows, has);
+        [].forEach.call(rows, function (r) { toggle(r, !hit || has(r)); });
+        [].forEach.call(wraps, function (w) { toggle(w, !hit || !!w.querySelector('tbody tr:not(.hidden-by-search)')); });
+      }
     });
     // the menu follows the search: only matching parts, their groups opened
     [].forEach.call(document.querySelectorAll('#toc a'), function (a) {
