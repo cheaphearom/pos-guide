@@ -22,6 +22,14 @@
     div.innerHTML = clean(root.marked.parse(String(src || ''), { gfm: true, breaks: false }));
     [].forEach.call(div.querySelectorAll('table'), function (t) {
       t.classList.add('doc');
+      // on phones each row becomes a small card: every cell gets its column name (shown above the value)
+      var heads = [].map.call(t.querySelectorAll('thead th'), function (th) { return th.textContent.trim(); });
+      if (heads.length) {
+        t.classList.add('stack');
+        [].forEach.call(t.querySelectorAll('tbody tr'), function (tr) {
+          [].forEach.call(tr.children, function (td, i) { if (heads[i]) td.setAttribute('data-label', heads[i]); });
+        });
+      }
       var w = document.createElement('div'); w.className = 'tscroll';
       t.parentNode.insertBefore(w, t); w.appendChild(t);
     });
