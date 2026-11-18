@@ -17,7 +17,7 @@ body { font-size: 15px; }
 button, input, select, textarea { font: inherit; color: inherit; }
 [hidden] { display: none !important; }
 .atop { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
-.atop-in { max-width: 1320px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.atop-in { margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .abrand { font-weight: 800; display: flex; align-items: center; gap: 8px; margin-right: auto; }
 .abrand i { width: 14px; height: 14px; border-radius: 4px; background: var(--accent); }
 .who { color: var(--muted); font-size: .85rem; }
@@ -29,7 +29,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn.danger:hover { border-color: var(--bad); background: var(--bad-soft); }
 .btn.small { padding: 3px 9px; font-size: .8rem; border-radius: 7px; }
 .btn.icon { padding: 2px 7px; font-size: .8rem; min-width: 26px; justify-content: center; }
-.amain { max-width: 1320px; margin: 0 auto; padding: 18px 16px 60px; }
+.amain { margin: 0 auto; padding: 18px 24px 60px; }
 .notice { max-width: 520px; margin: 40px auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
 .layout { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.25fr); gap: 18px; align-items: start; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; min-width: 0; }
@@ -44,6 +44,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .item.page .t { font-weight: 800; }
 .kind { font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
 .off { font-size: .7rem; font-weight: 700; color: var(--bad); background: var(--bad-soft); border-radius: 999px; padding: 0 7px; }
+.who-chip { font-size: .7rem; font-weight: 700; color: var(--muted); background: var(--sunken); border-radius: 999px; padding: 0 7px; white-space: nowrap; }
+.viewers { display: flex; gap: 16px; flex-wrap: wrap; padding: 4px 0 2px; }
 .mv { display: inline-flex; gap: 2px; opacity: 0; }
 .item:hover .mv, .item.on .mv, .item:focus-within .mv { opacity: 1; }
 .adds { display: flex; gap: 6px; margin: 2px 0 8px 24px; flex-wrap: wrap; }
@@ -178,7 +180,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
     t.textContent = m; t.classList.toggle('bad', !!bad); t.hidden = false; clearTimeout(tt); tt = setTimeout(function () { t.hidden = true; }, bad ? 5000 : 2000);
   }
   function showErr(f, e) { var el = f.querySelector('.err'); el.textContent = e ? e.message : ''; el.hidden = !e; }
-  function data(f) { var o = {}; new FormData(f).forEach(function (v, k) { o[k] = v; }); return o; }
+  function data(f) { var o = {}; new FormData(f).forEach(function (v, k) { o[k] = k in o ? [].concat(o[k], v) : v; }); return o; }
   function fail(e) { if (e.status === 401) location.replace('../login.html?next=' + encodeURIComponent('/admin/')); else toast(e.message, true); }
 
   // ── start
@@ -211,7 +213,8 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
   function draw() {
     $('#tree').innerHTML = S.pages.map(function (p) {
       var o = S.open[p.id];
-      var h = '<li><div class="item page' + on('page', p.id) + '" data-kind="page" data-id="' + p.id + '" tabindex="0"><span class="t">' + (o ? '▾ ' : '▸ ') + esc(p.title) + '</span>' + (p.published ? '' : '<span class="off">hidden</span>') + mv('page', p.id) + '</div>';
+      var who = p.viewers && p.viewers.length ? '<span class="who-chip" title="Who can see this page">' + esc(['Owner'].concat(p.viewers.map(function (r) { return S.roles[r] || r; })).join(', ')) + '</span>' : '';
+      var h = '<li><div class="item page' + on('page', p.id) + '" data-kind="page" data-id="' + p.id + '" tabindex="0"><span class="t">' + (o ? '▾ ' : '▸ ') + esc(p.title) + '</span>' + who + (p.published ? '' : '<span class="off">hidden</span>') + mv('page', p.id) + '</div>';
       if (o) {
         h += '<ul>' + o.blocks.map(function (b) {
           var s = '<li><div class="item' + on('block', b.id) + '" data-kind="block" data-id="' + b.id + '" data-page="' + p.id + '" tabindex="0"><span class="kind">' + KINDS[b.kind] + '</span><span class="t">' + esc(b.title) + '</span>' + (b.published ? '' : '<span class="off">hidden</span>') + mv('block', b.id) + '</div>';
@@ -296,10 +299,16 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
     $('#edMeta').textContent = r && r.updated_at ? 'Saved ' + new Date(r.updated_at).toLocaleString() + (r.updated_by ? ' by ' + r.updated_by : '') : '';
     var h = '<form id="edForm"><div class="err" hidden></div>', foot = '', pv = false;
     if (sel.kind === 'page') {
-      r = r || { title: '', slug: '', intro: '', published: true };
+      r = r || { title: '', slug: '', intro: '', published: true, viewers: [] };
       $('#edTitle').textContent = sel.id ? 'Edit page' : 'New page';
       h += '<div class="grid2">' + input('title', 'Title', r.title, 'maxlength="120" required') + '<label class="field"><span>Page address</span><input name="slug" value="' + esc(r.slug) + '" maxlength="60" required pattern="[a-z0-9][a-z0-9-]*"><span class="hint">The link is index.html?p=<b>address</b>. Lower-case, digits, dashes.</span></label></div>' +
-        '<label class="field"><span>Introduction (optional)</span><textarea name="intro" data-rich="200" style="min-height:120px">' + esc(r.intro) + '</textarea></label>';
+        '<label class="field"><span>Introduction (optional)</span><textarea name="intro" data-rich="200" style="min-height:120px">' + esc(r.intro) + '</textarea></label>' +
+        '<div class="field"><span>Who can see this page</span><div class="viewers">' +
+          Object.keys(S.roles).filter(function (k) { return k !== 'owner'; }).map(function (k) {
+            var all = !r.viewers || !r.viewers.length;
+            return '<label class="check"><input type="checkbox" name="viewer" value="' + k + '"' + (all || r.viewers.indexOf(k) >= 0 ? ' checked' : '') + '> ' + esc(S.roles[k]) + '</label>';
+          }).join('') + '<label class="check"><input type="checkbox" checked disabled> Owner</label></div>' +
+        '<span class="hint">Untick a role to hide the page from it (in the menu and on the server). All ticked = everyone who can log in.</span></div>';
       foot = sel.id ? '<button class="btn danger" type="button" id="delBtn">Delete page</button>' : '';
       pv = true;
     } else if (sel.kind === 'block') {
@@ -364,6 +373,13 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
     var f = ev.target, sel = S.sel, d = data(f);
     d.published = f.published.checked;
     if (d.page_id) d.page_id = +d.page_id;
+    if (sel.kind === 'page') {
+      var picked = [].map.call(f.querySelectorAll('input[name=viewer]:checked'), function (x) { return x.value; });
+      var roles = Object.keys(S.roles).filter(function (k) { return k !== 'owner'; });
+      if (!picked.length && !confirm('No role is ticked: only the Owner will see this page. Continue?')) return;
+      d.viewers = picked.length === roles.length ? [] : picked; // all ticked = everyone
+      delete d.viewer;
+    }
     if (d.block_id) d.block_id = +d.block_id;
     if (sel.id) d.id = sel.id;
     var path = { page: 'admin/pages', block: 'admin/blocks', card: 'admin/cards' }[sel.kind];

@@ -6,6 +6,7 @@ import { ensureSchema, q } from '../lib/db.js';
 import { GENERATED } from '../lib/generated/index.js';
 import { api, HttpError } from '../lib/http.js';
 import { can } from '../lib/roles.js';
+import { canSee } from '../lib/access.js';
 
 export default api(['GET'], async (req) => {
   await ensureSchema();
@@ -13,10 +14,11 @@ export default api(['GET'], async (req) => {
   await ensureContent();
   const all = req.query?.all === '1' && can(me.role, 'edit');
   const slug = String(req.query?.slug ?? '');
-  const page = (await q(
-    `SELECT * FROM guide_pages WHERE ${slug ? 'slug = $1' : 'true'} ${all ? '' : 'AND published'} ORDER BY sort_order, id LIMIT 1`,
-    slug ? [slug] : [])).rows[0];
-  if (!page) throw new HttpError(404, 'Page not found');
+  const rows = (await q(
+    `SELECT * FROM guide_pages WHERE ${slug ? 'slug = $1' : 'true'} ${all ? '' : 'AND published'} ORDER BY sort_order, id`,
+    slug ? [slug] : [])).rows;
+  const page = rows.find((p) => canSee(p, me.role));
+  if (!page) throw new HttpError(404, 'Page not found'); // also when this role may not see it
   const blocks = (await q(`SELECT * FROM guide_blocks WHERE page_id = $1 ${all ? '' : 'AND published'} ORDER BY sort_order, id`, [page.id])).rows;
   const ids = blocks.filter((b) => b.kind === 'cards').map((b) => b.id);
   const cards = ids.length ? (await q(`SELECT * FROM guide_cards WHERE block_id = ANY($1) ${all ? '' : 'AND published'} ORDER BY sort_order, id`, [ids])).rows : [];
