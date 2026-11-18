@@ -49,6 +49,9 @@ li { margin: 3px 0; }
 li::marker { color: var(--accent); }
 .hide { display: none !important; }
 .empty { display: none; color: var(--muted); margin-top: 30px; }
+.updated { color: var(--muted); font-size: .82rem; margin-top: 30px; }
+.card p { margin: 0 0 8px; } .card h4 { margin: 10px 0 4px; font-size: .92rem; }
+.card code, .lead code { font-size: .88em; background: var(--sunken); padding: 0 4px; border-radius: 4px; }
 footer { max-width: 1100px; margin: 0 auto; padding: 0 16px 40px; color: var(--muted); font-size: .85rem; }
 @media (max-width: 640px) { .search { flex-basis: 100%; margin-left: 0; } .top nav { font-size: .85rem; } }
 </style>
@@ -57,7 +60,7 @@ footer { max-width: 1100px; margin: 0 auto; padding: 0 16px 40px; color: var(--m
 <header class="top">
   <div class="top-in">
     <div class="brand"><i></i>BROWN POS Features</div>
-    <nav aria-label="Sections">
+    <nav aria-label="Sections" id="nav">
       <a href="#cashier">Cashier</a><a href="#kitchen">Kitchen</a><a href="#online">Online</a><a href="#admin">Admin</a><a href="#brown">BROWN sync</a><a href="#server">Server</a><a href="index.html">System guide</a>
     </nav>
     <label class="search"><input id="q" type="search" placeholder="Search features…" aria-label="Search features"></label>
@@ -71,6 +74,7 @@ footer { max-width: 1100px; margin: 0 auto; padding: 0 16px 40px; color: var(--m
     <div class="legend"><span class="tag used">in use</span> used and tested with real store data <span class="tag code">ready</span> built and working, not yet used with real data</div>
   </div>
 
+  <div id="content">
   <section id="cashier">
     <h2><span class="n">1</span>Cashier screen</h2>
     <p class="lead">What the cashier uses all day, at <code>/pos</code>. Works on a PC, a tablet or a touch screen.</p>
@@ -236,20 +240,52 @@ footer { max-width: 1100px; margin: 0 auto; padding: 0 16px 40px; color: var(--m
     </div>
   </section>
 
+  </div>
+  <p class="updated" id="updated"></p>
   <p class="empty" id="empty">No feature matches your search.</p>
 </main>
-<footer>BROWN POS · Features list · see also the <a href="index.html">System guide</a></footer>
+<footer>BROWN POS · Features list · see also the <a href="index.html">System guide</a> · <a href="admin/">Edit</a></footer>
 
+<script src="assets/md.js"></script>
 <script>
-// search: hides the cards (and sections) that do not mention the words typed
+// Content comes from the database (/api/content). Opened without the API (e.g. as a file), the text above is shown as is.
 (function () {
-  var q = document.getElementById('q'), cards = [].slice.call(document.querySelectorAll('.card')), secs = [].slice.call(document.querySelectorAll('main section')), empty = document.getElementById('empty');
-  q.addEventListener('input', function () {
+  var M = window.guideMd, esc = M.esc;
+  var TAG = { 'in use': 'used', ready: 'code', new: 'used', planned: 'code' };
+  var tagHtml = function (t) { return t ? ' <span class="tag ' + (TAG[t] || 'code') + '">' + esc(t) + '</span>' : ''; };
+  function render(data) {
+    var secs = data.sections || [];
+    if (!secs.length) return;
+    document.getElementById('nav').innerHTML = secs.map(function (s) { return '<a href="#' + esc(s.slug) + '">' + esc(s.title.split(' ')[0]) + '</a>'; }).join('') + '<a href="index.html">System guide</a>';
+    document.getElementById('content').innerHTML = secs.map(function (s, i) {
+      return '<section id="' + esc(s.slug) + '"><h2><span class="n">' + (i + 1) + '</span>' + esc(s.title) + tagHtml(s.tag) + '</h2>' +
+        (s.lead ? '<p class="lead">' + M.inline(s.lead) + '</p>' : '') +
+        '<div class="grid">' + s.cards.map(function (c) {
+          return '<div class="card"><h3>' + esc(c.title) + (c.path ? ' <span class="path">' + esc(c.path) + '</span>' : '') + tagHtml(c.tag) + '</h3>' + M.md(c.body) + '</div>';
+        }).join('') + '</div></section>';
+    }).join('');
+    if (data.updatedAt) document.getElementById('updated').textContent = 'Last updated ' + new Date(data.updatedAt).toLocaleString();
+    if (location.hash) { var el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
+    search();
+  }
+  if (location.protocol !== 'file:') {
+    fetch('api/content', { headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d) render(d); })
+      .catch(function () { /* keep the text that is in the page */ });
+  }
+  // search: hides the cards (and sections) that do not mention the words typed
+  var q = document.getElementById('q'), empty = document.getElementById('empty');
+  function search() {
     var words = q.value.toLowerCase().split(/\s+/).filter(Boolean), any = false;
-    cards.forEach(function (c) { var t = c.textContent.toLowerCase(); var ok = words.every(function (w) { return t.indexOf(w) >= 0; }); c.classList.toggle('hide', !ok); if (ok) any = true; });
-    secs.forEach(function (s) { s.classList.toggle('hide', !s.querySelector('.card:not(.hide)')); });
+    [].forEach.call(document.querySelectorAll('#content .card'), function (c) {
+      var t = c.textContent.toLowerCase(), ok = words.every(function (w) { return t.indexOf(w) >= 0; });
+      c.classList.toggle('hide', !ok); if (ok) any = true;
+    });
+    [].forEach.call(document.querySelectorAll('#content section'), function (s) { s.classList.toggle('hide', !s.querySelector('.card:not(.hide)')); });
     empty.style.display = any ? 'none' : 'block';
-  });
+  }
+  q.addEventListener('input', search);
 })();
 </script>
 </body>

@@ -1,0 +1,13 @@
+{
+  "name": "pos-guide",
+  "private": true,
+  "description": "BROWN POS guide pages and the admin portal that edits them (content in a Neon PostgreSQL database)",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env scripts/dev.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.12.0"
+  }
+}
