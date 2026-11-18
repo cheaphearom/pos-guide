@@ -39,7 +39,9 @@ Tags: **in use** (used with real store data), **ready** (built, not yet used wit
 
 On first use the database is filled with the **System guide** (BRD, SDD, data flow diagrams, hosting, how the server works, getting started, database, data flows, value lists, queries, technology terms) and **Features**. A database from the earlier portal keeps its Features content.
 
-A **How to use** page (42 parts: cashier screen, marketing, menu and stores, back office; each with who, where, a **user flow diagram**, steps, what happens, good to know) is added once to every database, new or existing, as a **content pack** (`lib/packs/`). It is recorded in the `guide_meta` table, so it is never added twice, and if the Owner deletes or renames it, it does not come back. To ship another page the same way, add a pack to `lib/packs/index.js`.
+A **How to use** page (42 parts: cashier screen, marketing, menu and stores, back office; each with who, where, a **user flow diagram**, steps, what happens, good to know) is added once to every database, new or existing, as a **content pack** (`lib/packs/`). It is recorded in the `guide_meta` table, so it is never added twice, and if the Owner deletes or renames it, it does not come back. A **How to set up** page (15 steps in order, from the first super admin to the test day and going live: stores, users, BROWN sync or menu by hand, prices, payments, cashier controls, café mode, counter devices, online ordering, members, marketing, stock) is added the same way, for every role.
+
+To ship another page the same way, add a pack to `lib/packs/index.js`. Corrections to a pack page already in a database go in `lib/packs/fixes.js`: each runs once and only replaces a part whose text is still exactly the old text, so the Owner's edits are never overwritten.
 
 ## Set it up (Neon + Vercel)
 
