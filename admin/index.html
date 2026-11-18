@@ -208,7 +208,10 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
   }
 
   // ── tree
-  function mv(kind, id) { return '<span class="mv"><button class="btn icon" type="button" data-move="up" data-kind="' + kind + '" data-id="' + id + '" aria-label="Move up">↑</button><button class="btn icon" type="button" data-move="down" data-kind="' + kind + '" data-id="' + id + '" aria-label="Move down">↓</button></span>'; }
+  function mv(kind, id) {
+    var btn = function (dir, sign, label) { return '<button class="btn icon" type="button" data-move="' + dir + '" data-kind="' + kind + '" data-id="' + id + '" aria-label="' + label + '" title="' + label + '">' + sign + '</button>'; };
+    return '<span class="mv">' + btn('top', '⤒', 'Move to the top') + btn('up', '↑', 'Move up') + btn('down', '↓', 'Move down') + btn('bottom', '⤓', 'Move to the bottom') + '</span>';
+  }
   function on(kind, id) { return S.sel && S.sel.kind === kind && S.sel.id === id ? ' on' : ''; }
   function draw() {
     $('#tree').innerHTML = S.pages.map(function (p) {

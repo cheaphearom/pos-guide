@@ -39,7 +39,9 @@ Tags: **in use** (used with real store data), **ready** (built, not yet used wit
 
 On first use the database is filled with the **System guide** (BRD, SDD, data flow diagrams, hosting, how the server works, getting started, database, data flows, value lists, queries, technology terms) and **Features**. A database from the earlier portal keeps its Features content.
 
-A **How to use** page (42 parts: cashier screen, marketing, menu and stores, back office; each with who, where, a **user flow diagram**, steps, what happens, good to know) is added once to every database, new or existing, as a **content pack** (`lib/packs/`). It is recorded in the `guide_meta` table, so it is never added twice, and if the Owner deletes or renames it, it does not come back. A **Glossary** page (105 POS words in 9 topic tables: term, meaning, where you see it) is added the same way, for every role. The search box shows only the matching table rows, on every page.
+A **How to use** page (42 parts: cashier screen, marketing, menu and stores, back office; each with who, where, a **user flow diagram**, steps, what happens, good to know) is added once to every database, new or existing, as a **content pack** (`lib/packs/`). It is recorded in the `guide_meta` table, so it is never added twice, and if the Owner deletes or renames it, it does not come back. A **Release notes** page (what changed in the POS, newest first, from the merged changes; grouped by month in the menu) is added the same way, for every role. For each new release the Owner adds a block and presses **⤒ Move to the top** (pages, blocks and cards can be moved one step or straight to the top or bottom).
+
+A **Glossary** page (105 POS words in 9 topic tables: term, meaning, where you see it) is added the same way, for every role. The search box shows only the matching table rows, on every page.
 
 An **FAQ** page (10 topics, 48 short questions and answers: selling, payments, members, marketing, menu, online orders, staff, reports, the system and this guide, with links to the step-by-step parts) is added the same way, for every role.
 
