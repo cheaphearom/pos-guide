@@ -1,6 +1,6 @@
 // Draws pages and blocks, in the guide's look. Used by the website (index.html) and the admin preview.
 // Markdown -> HTML with marked, cleaned by DOMPurify (no scripts, no event handlers, safe links only), then dressed up:
-// tables scroll, ```mermaid becomes a diagram, other code gets a Copy button, > quotes become notes.
+// tables scroll, ```mermaid becomes a diagram, other code gets a Copy button, > quotes become notes, - [ ] items get tick boxes.
 (function (root) {
   var esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); };
   var TAG = { 'in use': 'ok', ready: 'plan', new: 'ok', planned: 'warn' };
@@ -19,7 +19,23 @@
   function md(src, cls) {
     var div = document.createElement('div');
     div.className = cls || 'prose';
-    div.innerHTML = clean(root.marked.parse(String(src || ''), { gfm: true, breaks: false }));
+    // task lists (- [ ] item): the cleaner removes form inputs, so each tick box is kept as a marker and drawn again below
+    var html = root.marked.parse(String(src || ''), { gfm: true, breaks: false }).replace(/<input\b[^>]*type="checkbox"[^>]*>/gi, function (m) {
+      return '<span class="tick-mark"' + (/\bchecked\b/i.test(m) ? ' data-checked="1"' : '') + '></span>';
+    });
+    div.innerHTML = clean(html);
+    [].forEach.call(div.querySelectorAll('span.tick-mark'), function (m) {
+      var box = document.createElement('input'); box.type = 'checkbox'; box.className = 'tick'; box.disabled = true;
+      box.checked = m.getAttribute('data-checked') === '1'; box.defaultChecked = box.checked;
+      var li = m.closest('li'); if (li) { li.classList.add('task'); var ul = li.parentNode; if (ul) ul.classList.add('tasks'); }
+      m.parentNode.replaceChild(box, m);
+      // the item's text in one box next to the tick, so it wraps like normal text
+      if (li && box.parentNode === li) {
+        var txt = document.createElement('span'); txt.className = 'ttext';
+        while (box.nextSibling) txt.appendChild(box.nextSibling);
+        li.appendChild(txt);
+      }
+    });
     [].forEach.call(div.querySelectorAll('table'), function (t) {
       t.classList.add('doc');
       // on phones each row becomes a small card: every cell gets its column name (shown above the value)
