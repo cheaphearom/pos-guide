@@ -6,7 +6,7 @@ Documentation for the BROWN POS, the point-of-sale system for BROWN Coffee store
 |---|---|
 | [`index.html`](index.html) | **System guide**: business requirements (BRD), software design (SDD), data flow diagrams, hosting, how the server works, getting started, every database table, how data flows, value lists, queries and technology terms. Generated from the backend's database design. |
 | [`features.html`](features.html) | **Features**: everything the system can do, by screen. Its sections and cards come from the database, so they are edited in the admin portal. Opened as a plain file (no server), it shows the text built into the page. |
-| [`admin/`](admin/) | **Admin portal**: log in and add, edit, reorder, hide or delete sections and cards (with a live preview), and manage who can edit. |
+| [`admin/`](admin/) | **Admin portal**: log in and add, edit, reorder, hide or delete sections and cards (with a live preview), and manage users and their roles. |
 
 ## Set it up (Neon + Vercel)
 
