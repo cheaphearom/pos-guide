@@ -215,3 +215,22 @@ main, main > *, .doc-sec, .doc-sec > *, .prose, .generated, .fgrid, .fcard { min
 .rail .brand { display: flex; align-items: center; gap: 8px; }
 
 @media (max-width: 600px) { .wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); } }
+
+/* menu of a page's parts, grouped ("Cashier", "Marketing"…): groups open and close; the part being read is highlighted */
+.rail .top.grouped { gap: 4px; }
+.rail .top a { display: block; padding: 4px 8px; border-radius: 6px; line-height: 1.35; }
+.rail .top a:hover { background: var(--sunken); text-decoration: none; }
+.rail .top a.on { background: var(--accent-soft); color: var(--accent); }
+.rail .top details.tgrp { margin: 0; border-radius: 8px; }
+.rail .top details.tgrp > summary { pointer-events: auto; list-style: none; display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 8px;
+  color: var(--ink); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; user-select: none; }
+.rail .top details.tgrp > summary::-webkit-details-marker { display: none; }
+.rail .top details.tgrp > summary::before { content: ''; width: 6px; height: 6px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg); transition: transform .15s; margin: 0 2px; }
+.rail .top details.tgrp[open] > summary::before { transform: rotate(45deg); }
+.rail .top details.tgrp > summary span { flex: 1; }
+.rail .top details.tgrp > summary b { font-size: 11px; font-weight: 700; color: var(--muted); background: var(--sunken); border-radius: 999px; padding: 1px 8px; letter-spacing: 0; }
+.rail .top details.tgrp > summary:hover { background: var(--sunken); }
+.rail .top details.tgrp > div { display: grid; gap: 1px; margin: 2px 0 8px 12px; padding-left: 6px; border-left: 1px solid var(--line); }
+.rail .top details.tgrp > div a { font-weight: 500; font-size: 14px; color: var(--ink); }
+.rail .top details.tgrp > div a.on { font-weight: 650; color: var(--accent); }

@@ -58,12 +58,17 @@
     $('#pages').innerHTML = site.pages.map(function (p) {
       return '<a href="?p=' + encodeURIComponent(p.slug) + '"' + (p.id === page.id ? ' class="on" aria-current="page"' : '') + '>' + esc(p.title) + '</a>';
     }).join('');
-    $('#toc').innerHTML = d.blocks.map(function (b) { return '<a href="#' + esc(b.anchor) + '">' + esc(b.title) + '</a>'; }).join('');
+    drawToc(d.blocks);
     // menu links scroll to the block itself (diagrams can contain elements with the same id)
     $('#toc').onclick = function (e) {
       var l = e.target.closest('a'); if (!l) return;
       var el = document.querySelector('#main > section[id="' + CSS.escape(l.getAttribute('href').slice(1)) + '"]');
-      if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); history.replaceState(null, '', l.getAttribute('href')); }
+      if (el) {
+        e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); history.replaceState(null, '', l.getAttribute('href'));
+        // the clicked part stays highlighted while the page scrolls to it
+        window.tocHold = Date.now() + 1200;
+        [].forEach.call($('#toc').querySelectorAll('a.on'), function (x) { x.classList.remove('on'); }); l.classList.add('on');
+      }
     };
     var main = $('#main'); main.innerHTML = '';
     var head = document.createElement('header'); head.className = 'page-head';
@@ -74,8 +79,63 @@
     var up = document.createElement('p'); up.className = 'updated';
     up.textContent = 'Last updated ' + new Date(d.updatedAt).toLocaleString();
     main.appendChild(up);
-    R.diagrams(main);
-    if (location.hash) { var el = main.querySelector(':scope > section[id="' + CSS.escape(decodeURIComponent(location.hash.slice(1))) + '"]') || document.getElementById(decodeURIComponent(location.hash.slice(1))); if (el) el.scrollIntoView(); }
+    var toHash = function () { if (!location.hash) return; var id = decodeURIComponent(location.hash.slice(1)); var el = main.querySelector(':scope > section[id="' + CSS.escape(id) + '"]') || document.getElementById(id); if (el) el.scrollIntoView(); };
+    toHash();
+    // diagrams above the linked part change its place when drawn: go there again, unless the reader has moved already
+    var moved = false, mark = function () { moved = true; };
+    ['wheel', 'touchmove', 'keydown', 'mousedown'].forEach(function (t) { addEventListener(t, mark, { once: true, passive: true }); });
+    R.diagrams(main).then(function () { if (!moved) toHash(); });
+  }
+
+  // Menu of the page's parts. Titles like "Cashier: sell an item" are grouped under "Cashier" (a group that opens
+  // and closes, with the short names inside) when two or more parts in a row share the same word before ":".
+  function drawToc(blocks) {
+    var groups = [];
+    blocks.forEach(function (b) {
+      var m = /^([^:]{1,24}):\s+(.+)$/.exec(b.title), key = m ? m[1].trim() : null, last = groups[groups.length - 1];
+      if (key && last && last.key === key) last.items.push({ b: b, short: m[2] });
+      else groups.push({ key: key, items: [{ b: b, short: m ? m[2] : b.title }] });
+    });
+    var link = function (it, short) {
+      var t = short ? it.short.charAt(0).toUpperCase() + it.short.slice(1) : it.b.title;
+      return '<a href="#' + esc(it.b.anchor) + '" title="' + esc(it.b.title) + '">' + esc(t) + '</a>';
+    };
+    var grouped = groups.some(function (g) { return g.key && g.items.length > 1; });
+    $('#toc').classList.toggle('grouped', grouped);
+    $('#toc').innerHTML = groups.map(function (g) {
+      if (!g.key || g.items.length < 2) return g.items.map(function (it) { return link(it, false); }).join('');
+      return '<details class="tgrp"><summary><span>' + esc(g.key) + '</span><b>' + g.items.length + '</b></summary><div>' +
+        g.items.map(function (it) { return link(it, true); }).join('') + '</div></details>';
+    }).join('');
+    var open = function (anchor) {
+      var a = anchor && $('#toc').querySelector('a[href="#' + CSS.escape(anchor) + '"]');
+      var g = a && a.closest('details'); if (g) g.open = true;
+      return a;
+    };
+    if (!open(decodeURIComponent(location.hash.slice(1))) && matchMedia('(min-width: 961px)').matches) { var first = $('#toc details'); if (first) first.open = true; }
+    // the part being read (the last one whose top has passed near the top of the screen) is highlighted in the menu
+    var current, ticking = false;
+    var spy = function () {
+      ticking = false;
+      if (Date.now() < (window.tocHold || 0)) return;
+      var secs = document.querySelectorAll('#main > section[id]:not(.hidden-by-search)'), at = null;
+      for (var i = 0; i < secs.length; i++) { if (secs[i].getBoundingClientRect().top <= innerHeight / 3) at = secs[i]; else break; }
+      var a = at && $('#toc').querySelector('a[href="#' + CSS.escape(at.id) + '"]');
+      if (!a || (a === current && a.classList.contains('on'))) return;
+      [].forEach.call($('#toc').querySelectorAll('a.on'), function (x) { x.classList.remove('on'); });
+      current = a; a.classList.add('on');
+      // only the group being read stays open, and the menu scrolls to keep the part in view (wide screens)
+      var g = a.closest('details');
+      [].forEach.call($('#toc').querySelectorAll('details[open]'), function (x) { if (x !== g && !$('#q').value) x.open = false; });
+      if (g) g.open = true;
+      var rail = $('#toc').closest('.rail');
+      if (rail && rail.scrollHeight > rail.clientHeight && matchMedia('(min-width: 961px)').matches) {
+        var r = a.getBoundingClientRect(), rr = rail.getBoundingClientRect();
+        if (r.top < rr.top + 60 || r.bottom > rr.bottom - 60) rail.scrollTo({ top: rail.scrollTop + r.top - rr.top - rr.height / 3, behavior: 'smooth' });
+      }
+    };
+    window.onscroll = function () { if (!ticking) { ticking = true; requestAnimationFrame(spy); } };
+    setTimeout(spy, 0);
   }
 
   // search: hides blocks, cards, tables and terms that do not contain every word typed
@@ -92,6 +152,16 @@
         [].forEach.call(s.querySelectorAll('.domain, .tgroup'), function (g) { toggle(g, !!g.querySelector('.tcard:not(.hidden-by-search), .term:not(.hidden-by-search)')); });
         toggle(s, any || has(s.querySelector('.dhead')));
       } else toggle(s, has(s));
+    });
+    // the menu follows the search: only matching parts, their groups opened
+    [].forEach.call(document.querySelectorAll('#toc a'), function (a) {
+      var sec = document.querySelector('#main > section[id="' + CSS.escape(a.getAttribute('href').slice(1)) + '"]');
+      a.classList.toggle('hidden-by-search', !!(words.length && sec && sec.classList.contains('hidden-by-search')));
+    });
+    [].forEach.call(document.querySelectorAll('#toc details'), function (g) {
+      var any = !!g.querySelector('a:not(.hidden-by-search)');
+      g.classList.toggle('hidden-by-search', !any);
+      if (words.length && any) g.open = true;
     });
   });
 })();
