@@ -6,7 +6,7 @@ The guide to the BROWN POS (the point-of-sale system for BROWN Coffee stores) as
 |---|---|
 | `/` (`index.html`) | **The guide**: one menu of pages (System guide, Features, and any page the Owner adds), each made of blocks. Visitors who are not logged in are sent to the login page. |
 | `/login.html` | Log in. On a new database it shows **First setup** instead. |
-| `/admin/` | **Admin portal** (Owner only): add, edit, reorder, hide and delete pages, blocks and feature cards, with a live preview; manage users. |
+| `/admin/` | **Admin portal** (Owner only): add, edit, reorder, hide and delete pages, blocks and feature cards in a **visual editor** (like Word), with a preview of the final page; manage users. |
 
 The pages hold no content themselves: everything is loaded from the API after login, so nothing can be read without an account.
 
@@ -30,6 +30,8 @@ Each page has an address (`index.html?p=features`), a title, an optional introdu
 | **Text** | Markdown: `## headings`, `- lists`, `**bold**`, `` `code` ``, `[links](index.html#hosting)`, `\| tables \|`, ` ```sql ` code (with a Copy button), ` ```mermaid ` diagrams, `> notes`. |
 | **Cards** | An introduction and a grid of feature cards (title, tag, page address in the POS, Markdown text). |
 | **Generated** | A part made from the POS code: the 51 database tables, how data flows, value lists. It cannot be edited here; the Owner can hide it, move it and write a note above it. |
+
+In the admin portal every text is edited in a **visual editor** (Toast UI Editor): a toolbar for headings, bold, italic, lists, tables (add rows and columns with a click), links, code and quotes (shown as notes), and what you type looks like the final page. The **Markdown** tab (bottom right) shows the raw text for exact control. For a diagram, add a code block and type `mermaid` as its language; the preview under the editor draws it. Only real edits count as unsaved changes.
 
 Tags: **in use** (used with real store data), **ready** (built, not yet used with real data), **new**, **planned**.
 
@@ -85,7 +87,7 @@ Open http://localhost:3000 (the guide) and http://localhost:3000/admin/ (the por
 | Part | Files |
 |---|---|
 | Pages | `index.html` (guide), `login.html`, `admin/index.html`, `features.html` (old link, redirects) |
-| Look and drawing | `assets/site.css` (the System guide's styles), `assets/render.js` (Markdown, tables, code, diagrams, cards), `assets/vendor/` (marked 12.0.2, DOMPurify 3.1.6, Mermaid 10.9.1) |
+| Look and drawing | `assets/site.css` (the System guide's styles), `assets/render.js` (Markdown, tables, code, diagrams, cards), `assets/vendor/` (marked 12.0.2, DOMPurify 3.1.6, Mermaid 10.9.1, Toast UI Editor 3.2.2 bundled into one file; all MIT licensed) |
 | API (Vercel functions) | `api/site.js`, `api/page.js` (read, any role), `api/setup.js`, `api/login.js`, `api/logout.js`, `api/me.js`, `api/admin/pages.js`, `api/admin/blocks.js`, `api/admin/cards.js`, `api/admin/admins.js` (Owner) |
 | Shared code | `lib/db.js` (Neon, tables), `lib/auth.js` (passwords, session), `lib/roles.js`, `lib/content.js` (first content), `lib/seed-guide.js`, `lib/seed.js`, `lib/generated/` (generated parts) |
 | Local server | `scripts/dev.mjs` (`npm run dev`) |
