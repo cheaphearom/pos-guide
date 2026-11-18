@@ -278,3 +278,31 @@ main, main > *, .doc-sec, .doc-sec > *, .prose, .generated, .fgrid, .fcard { min
   a { color: #000; }
 }
 .prose li.task > .ttext { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+
+/* quick reference card layout (page setting): compact boxes in a grid; printed, each block fills one landscape sheet */
+.layout-card > section > .dhead h2 { font-size: 1.35rem; }
+.layout-card .qgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 12px; margin-top: 10px; align-items: start; }
+.layout-card .qcard { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px 12px; font-size: 13.5px; line-height: 1.45; min-width: 0; }
+.layout-card .qcard h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.layout-card .qcard ul, .layout-card .qcard ol { margin: 0; padding-left: 18px; }
+.layout-card .qcard li { margin: 1px 0; }
+.layout-card .qcard p { margin: 2px 0; }
+.layout-card .qcard .tscroll { margin: 4px 0 0; }
+.layout-card .qcard table.doc { min-width: 0; font-size: 13px; }
+.layout-card .qcard table.doc td, .layout-card .qcard table.doc th { padding: 3px 8px; }
+.layout-card .qcard kbd, .layout-card .qcard code { font-size: 12px; }
+@media print {
+  .layout-card { page: refcard; }
+  .layout-card .page-head .intro, .layout-card .tickbar { display: none; }
+  .layout-card .page-head h1 { font-size: 16px; margin: 0; }
+  .layout-card > section { break-before: page; break-inside: avoid; }
+  .layout-card > section:first-of-type { break-before: auto; }
+  .layout-card > section > .dhead { padding-top: 4px; border-top-width: 1px; }
+  .layout-card > section > .dhead h2 { font-size: 15px; }
+  .layout-card .qgrid { grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 6px; }
+  .layout-card .qcard { font-size: 11px; line-height: 1.32; padding: 6px 9px; border-color: #999; border-radius: 6px; break-inside: avoid; }
+  .layout-card .qcard h3 { font-size: 11px; color: #000; margin-bottom: 3px; padding-bottom: 2px; }
+  .layout-card .qcard table.doc { font-size: 10.5px; }
+  .layout-card .qcard table.doc td, .layout-card .qcard table.doc th { padding: 1px 4px; background: none; }
+}
+@page refcard { size: A4 landscape; margin: 8mm; }

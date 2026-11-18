@@ -5,7 +5,8 @@ import { api, HttpError, int, slug, text } from '../../lib/http.js';
 import { move } from '../../lib/order.js';
 import { viewers } from '../../lib/access.js';
 
-const fields = (b) => ({ slug: slug(b.slug, 'Page address'), title: text(b.title, 'Title', 120, { required: true }), intro: text(b.intro, 'Introduction', 4000), published: b.published !== false, viewers: viewers(b.viewers) });
+const LAYOUTS = ['', 'card'];
+const fields = (b) => ({ slug: slug(b.slug, 'Page address'), title: text(b.title, 'Title', 120, { required: true }), intro: text(b.intro, 'Introduction', 4000), published: b.published !== false, viewers: viewers(b.viewers), layout: LAYOUTS.includes(b.layout) ? b.layout : '' });
 
 export default api(['POST', 'PUT', 'DELETE'], async (req, res, body) => {
   await ensureSchema();
@@ -13,15 +14,15 @@ export default api(['POST', 'PUT', 'DELETE'], async (req, res, body) => {
   try {
     if (req.method === 'POST') {
       const f = fields(body);
-      return (await q(`INSERT INTO guide_pages (slug, title, intro, published, viewers, sort_order, updated_by)
-        VALUES ($1,$2,$3,$4,$5,(SELECT coalesce(max(sort_order),0)+10 FROM guide_pages),$6) RETURNING *`, [f.slug, f.title, f.intro, f.published, f.viewers, me.email])).rows[0];
+      return (await q(`INSERT INTO guide_pages (slug, title, intro, published, viewers, layout, sort_order, updated_by)
+        VALUES ($1,$2,$3,$4,$5,$6,(SELECT coalesce(max(sort_order),0)+10 FROM guide_pages),$7) RETURNING *`, [f.slug, f.title, f.intro, f.published, f.viewers, f.layout, me.email])).rows[0];
     }
     if (req.method === 'PUT') {
       const id = int(body.id, 'id');
       if (body.move) return move(db(), 'guide_pages', id, body.move, null);
       const f = fields(body);
-      const row = (await q('UPDATE guide_pages SET slug=$2, title=$3, intro=$4, published=$5, viewers=$6, updated_at=now(), updated_by=$7 WHERE id=$1 RETURNING *',
-        [id, f.slug, f.title, f.intro, f.published, f.viewers, me.email])).rows[0];
+      const row = (await q('UPDATE guide_pages SET slug=$2, title=$3, intro=$4, published=$5, viewers=$6, layout=$7, updated_at=now(), updated_by=$8 WHERE id=$1 RETURNING *',
+        [id, f.slug, f.title, f.intro, f.published, f.viewers, f.layout, me.email])).rows[0];
       if (!row) throw new HttpError(404, 'Page not found');
       return row;
     }
