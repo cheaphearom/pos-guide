@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Chea Phearom. All rights reserved.
+// Proprietary and confidential: see the LICENSE file.
 // Owner: pages. POST create · PUT update (or { id, move: 'up' | 'down' }) · DELETE ?id= (its blocks and cards go too)
 import { requireRole } from '../../lib/auth.js';
 import { db, ensureSchema, q } from '../../lib/db.js';

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Chea Phearom. All rights reserved.
+// Proprietary and confidential: see the LICENSE file.
 // Local test server: serves the pages and runs /api/* like Vercel does (npm run dev, then open http://localhost:3000).
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';

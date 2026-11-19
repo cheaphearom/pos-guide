@@ -113,3 +113,9 @@ Open http://localhost:3000 (the guide) and http://localhost:3000/admin/ (the por
 Security: passwords are stored as scrypt hashes; the session is a signed, HTTP-only cookie (7 days) and every request checks that the person still exists; changes must come from the portal itself (JSON with an `X-Guide` header); wrong logins are slowed down; Markdown is cleaned by DOMPurify, so scripts in the text never run; database errors are never shown to visitors.
 
 The generated parts in `lib/generated/` come from the backend's database design (`prisma/schema.prisma`). When the database changes, they are rebuilt from it and committed here.
+
+## License
+
+Copyright (c) 2026 Chea Phearom. All rights reserved.
+
+This is proprietary software: no use, copying, changes or distribution without written permission. See [LICENSE](LICENSE). The libraries in `assets/vendor/` (marked, DOMPurify, Mermaid, Toast UI Editor) keep their own MIT licenses.

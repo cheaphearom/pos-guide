@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Chea Phearom. All rights reserved.
+// Proprietary and confidential: see the LICENSE file.
 // POST /api/login { email, password }
 import { checkPassword, startSession } from '../lib/auth.js';
 import { ensureSchema, q } from '../lib/db.js';

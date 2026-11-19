@@ -1,6 +1,8 @@
 {
   "name": "pos-guide",
   "private": true,
+  "license": "UNLICENSED",
+  "author": "Chea Phearom",
   "description": "BROWN POS guide pages and the admin portal that edits them (content in a Neon PostgreSQL database)",
   "type": "module",
   "engines": { "node": ">=20" },

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Chea Phearom. All rights reserved.
+// Proprietary and confidential: see the LICENSE file.
 // GET /api/page?slug=features : one page with its blocks (cards, generated HTML). Any role; the Owner can ask ?all=1
 // to also get hidden blocks and cards.
 import { requireRole } from '../lib/auth.js';

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Chea Phearom. All rights reserved.
+// Proprietary and confidential: see the LICENSE file.
 // GET /api/site : the pages for the menu, and who is logged in (any role). The Owner can ask ?all=1 to see hidden pages.
 import { requireRole } from '../lib/auth.js';
 import { ensureContent } from '../lib/content.js';

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Chea Phearom. All rights reserved.
+// Proprietary and confidential: see the LICENSE file.
 // First setup. GET: { needsSetup }. POST { setupKey, email, name, password }: creates the tables, the first person
 // (the Owner) and the starting pages, only while nobody can log in yet, and only with the SETUP_KEY set on the server.
 import { timingSafeEqual } from 'node:crypto';
