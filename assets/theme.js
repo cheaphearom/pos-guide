@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Chea Phearom. All rights reserved.
+// Proprietary and confidential: see the LICENSE file.
 // Light / dark switch for every page. Load it in <head> (before the page draws) so there is no flash.
 // No choice yet: follow the computer's setting. After a click: remember the choice on this device.
 (function () {

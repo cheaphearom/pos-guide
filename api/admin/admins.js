@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Chea Phearom. All rights reserved.
+// Proprietary and confidential: see the LICENSE file.
 // Owner: people who can log in. GET list · POST add { email, name, role, password }
 // PUT { id, role?, password? } · DELETE ?id=. There is always at least one Owner.
 import { checkNewPassword, hashPassword, requireRole } from '../../lib/auth.js';

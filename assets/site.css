@@ -1,3 +1,4 @@
+/* Copyright (c) 2026 Chea Phearom. All rights reserved. Proprietary and confidential: see the LICENSE file. */
 /* BROWN POS Guide: the System guide's styles (shared by the website and the admin portal) */
 /* Layout: sticky table-of-contents rail on the left, a long reference column on the right; stacks on phones. */
 :root {
@@ -306,3 +307,6 @@ main, main > *, .doc-sec, .doc-sec > *, .prose, .generated, .fgrid, .fcard { min
   .layout-card .qcard table.doc td, .layout-card .qcard table.doc th { padding: 1px 4px; background: none; }
 }
 @page refcard { size: A4 landscape; margin: 8mm; }
+
+/* copyright line (menu, login, admin) */
+.copyright { margin: 14px 0 0; font-size: 12px; color: var(--muted); }

@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Chea Phearom. All rights reserved.
+// Proprietary and confidential: see the LICENSE file.
 // Draws pages and blocks, in the guide's look. Used by the website (index.html) and the admin preview.
 // Markdown -> HTML with marked, cleaned by DOMPurify (no scripts, no event handlers, safe links only), then dressed up:
 // tables scroll, ```mermaid becomes a diagram, other code gets a Copy button, > quotes become notes, - [ ] items get tick boxes.

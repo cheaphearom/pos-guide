@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Chea Phearom. All rights reserved.
+// Proprietary and confidential: see the LICENSE file.
 // Owner: blocks of a page. kind: text (Markdown) · cards (a group of feature cards) · generated (from the code: hide, move, add a note)
 // POST create · PUT update (or { id, move: 'up' | 'down' }) · DELETE ?id=
 import { requireRole } from '../../lib/auth.js';

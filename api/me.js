@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Chea Phearom. All rights reserved.
+// Proprietary and confidential: see the LICENSE file.
 // GET /api/me : the logged-in user (with role and permissions), or { admin: null }
 // PUT /api/me { currentPassword, password } : change your own password (every role)
 import { checkNewPassword, checkPassword, currentAdmin, hashPassword, requireAdmin } from '../lib/auth.js';

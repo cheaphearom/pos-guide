@@ -8,7 +8,7 @@
 <script src="assets/theme.js"></script>
 <link rel="stylesheet" href="assets/site.css">
 <style>
-body { display: grid; place-items: center; min-height: 100vh; padding: 16px; }
+body { display: grid; place-items: center; align-content: center; gap: 14px; min-height: 100vh; padding: 16px; }
 .box { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 26px; }
 .brand { font-weight: 800; display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
 .brand i { width: 14px; height: 14px; border-radius: 4px; background: var(--accent); display: inline-block; }
@@ -54,6 +54,7 @@ button:disabled { opacity: .6; cursor: default; }
     <button type="submit">Create the Owner and open the guide</button>
   </form>
 </main>
+<p class="copyright">© 2026 Chea Phearom. All rights reserved.</p>
 <script>
 (function () {
   var $ = function (s) { return document.querySelector(s); };
